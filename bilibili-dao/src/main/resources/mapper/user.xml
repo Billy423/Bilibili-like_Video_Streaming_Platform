@@ -80,45 +80,44 @@
 
     <update id="updateUsers" parameterType="com.example.bilibili.domain.User">
         UPDATE
-        t_user
+            t_user
         SET
-        <if test="phone != null and phone != '' ">
-            phone = #{phone},
-        </if>
-        <if test="email != null and email != '' ">
-            email = #{email},
-        </if>
-        <if test="password != null and password != '' ">
-            password = #{password},
-        </if>
-        updateTime = #{updateTime}
+            <if test="phone != null and phone != '' ">
+                phone = #{phone},
+            </if>
+            <if test="email != null and email != '' ">
+                email = #{email},
+            </if>
+            <if test="password != null and password != '' ">
+                password = #{password},
+            </if>
+            updateTime = #{updateTime}
         WHERE
-        id = #{id}
+            id = #{id}
     </update>
 
     <update id="updateUserInfos" parameterType="com.example.bilibili.domain.UserInfo">
         UPDATE
-        t_user_info
+            t_user_info
         SET
-        <if test="nick != null and nick != '' ">
-            nick = #{nick},
-        </if>
-        <if test="avatar != null">
-            avatar = #{avatar},
-        </if>
-        <if test="sign != null">
-            sign = #{sign},
-        </if>
-        <if test="birth != null and birth != '' ">
-            birth = #{birth},
-        </if>
-        <if test="gender != null and gender != '' ">
-            gender = #{gender},
-        </if>
-        updateTime = #{updateTime}
+            <if test="nick != null and nick != '' ">
+                nick = #{nick},
+            </if>
+            <if test="avatar != null">
+                avatar = #{avatar},
+            </if>
+            <if test="sign != null">
+                sign = #{sign},
+            </if>
+            <if test="birth != null and birth != '' ">
+                birth = #{birth},
+            </if>
+            <if test="gender != null and gender != '' ">
+                gender = #{gender},
+            </if>
+            updateTime = #{updateTime}
         WHERE
-        userId = #{userId}
+            userId = #{userId}
     </update>
-
 
 </mapper>
