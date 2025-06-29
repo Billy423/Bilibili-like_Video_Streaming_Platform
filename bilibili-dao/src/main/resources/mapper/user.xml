@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD MAPPER 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.bilibili.dao.UserDao">
+
+    <select id="getUserByPhone" parameterType="java.lang.String" resultType="com.example.bilibili.domain.User">
+        SELECT
+            *
+        FROM
+            t_user
+        WHERE
+            phone = #{phone}
+    </select>
+
+    <insert id="addUser" parameterType="com.example.bilibili.domain.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO
+            t_user(
+            phone,
+            email,
+            password,
+            salt,
+            createTime
+        ) VALUES (
+                    #{phone},
+                    #{email},
+                    #{password},
+                    #{salt},
+                    #{createTime}
+                )
+    </insert>
+
+    <insert id="addUserInfo" parameterType="com.example.bilibili.domain.UserInfo">
+        INSERT INTO
+            t_user_info(
+            userId,
+            nick,
+            avatar,
+            sign,
+            gender,
+            birth,
+            createTime
+        ) VALUES (
+                    #{userId},
+                    #{nick},
+                    #{avatar},
+                    #{sign},
+                    #{gender},
+                    #{birth},
+                    #{createTime}
+                )
+    </insert>
+
+    <select id="getUserByPhoneOrEmail" parameterType="java.lang.String" resultType="com.example.bilibili.domain.User">
+        SELECT
+            *
+        FROM
+            t_user
+        WHERE
+            phone = #{phone} OR email = #{email}
+    </select>
+
+    <select id="getUserById" parameterType="java.lang.Long" resultType="com.example.bilibili.domain.User">
+        SELECT
+            *
+        FROM
+            t_user
+        WHERE
+            id = #{id}
+    </select>
+
+    <select id="getUserInfoByUserId" parameterType="java.lang.Long" resultType="com.example.bilibili.domain.UserInfo">
+        SELECT
+            *
+        FROM
+            t_user_info
+        WHERE
+            userId = #{userId}
+    </select>
+
+    <update id="updateUsers" parameterType="com.example.bilibili.domain.User">
+        UPDATE
+        t_user
+        SET
+        <if test="phone != null and phone != '' ">
+            phone = #{phone},
+        </if>
+        <if test="email != null and email != '' ">
+            email = #{email},
+        </if>
+        <if test="password != null and password != '' ">
+            password = #{password},
+        </if>
+        updateTime = #{updateTime}
+        WHERE
+        id = #{id}
+    </update>
+
+    <update id="updateUserInfos" parameterType="com.example.bilibili.domain.UserInfo">
+        UPDATE
+        t_user_info
+        SET
+        <if test="nick != null and nick != '' ">
+            nick = #{nick},
+        </if>
+        <if test="avatar != null">
+            avatar = #{avatar},
+        </if>
+        <if test="sign != null">
+            sign = #{sign},
+        </if>
+        <if test="birth != null and birth != '' ">
+            birth = #{birth},
+        </if>
+        <if test="gender != null and gender != '' ">
+            gender = #{gender},
+        </if>
+        updateTime = #{updateTime}
+        WHERE
+        userId = #{userId}
+    </update>
+
+
+</mapper>
