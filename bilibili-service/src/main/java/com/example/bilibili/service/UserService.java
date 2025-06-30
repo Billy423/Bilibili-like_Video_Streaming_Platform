@@ -1,6 +1,8 @@
 package com.example.bilibili.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.example.bilibili.dao.UserDao;
+import com.example.bilibili.domain.PageResult;
 import com.example.bilibili.domain.User;
 import com.example.bilibili.domain.UserInfo;
 import com.example.bilibili.domain.constant.UserConstant;
@@ -116,4 +118,24 @@ public class UserService {
         userDao.updateUserInfos(userInfo);
     }
 
+    public User getUserById(Long followingId) {
+        return userDao.getUserById(followingId);
+    }
+
+    public List<UserInfo> getUserInfoByUserIds(Set<Long> userIdList) {
+        return userDao.getUserInfoByUserIds(userIdList);
+    }
+
+    public PageResult<UserInfo> pageListUserInfos(JSONObject params) {
+        Integer no = params.getInteger("no");
+        Integer size = params.getInteger("size");
+        params.put("start", (no-1)*size);
+        params.put("limit", size);
+        Integer total = userDao.pageCountUserInfos(params);
+        List<UserInfo> list = new ArrayList<>();
+        if (total > 0) {
+            list = userDao.pageListUserInfos(params);
+        }
+        return new PageResult<>(total, list);
+    }
 }

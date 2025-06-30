@@ -119,5 +119,46 @@
         WHERE
             userId = #{userId}
     </update>
+    
+    <select id="getUserInfoByUserIds" resultType="com.example.bilibili.domain.UserInfo">
+        SELECT
+            *
+        FROM
+            t_user_info
+        WHERE
+            1=1
+            <if test="userIdList != null and userIdList.size > 0">
+                AND userId IN 
+                <foreach collection="userIdList" item="userId" index="index" open="(" close=")" separator=",">
+                    #{userId}
+                </foreach>
+            </if>
+    </select>
+
+    <select id="pageCountUserInfos" parameterType="java.util.Map" resultType="java.lang.Integer">
+        SELECT
+            count(1)
+        FROM
+            t_user_info
+        WHERE
+            1=1
+            <if test="nick != null and nick != '' ">
+                AND nick LIKE '%${nick}%'
+            </if>
+    </select>
+
+    <select id="pageListUserInfos" parameterType="java.util.Map" resultType="com.example.bilibili.domain.UserInfo">
+        SELECT
+            *
+        FROM
+            t_user_info
+        WHERE
+            1=1
+            <if test="nick != null and nick != '' ">
+                and nick like '%${nick}%'
+            </if>
+        ORDER BY id DESC
+            limit #{start}, #{limit}
+    </select>
 
 </mapper>

@@ -1,13 +1,18 @@
 package com.example.bilibili.api;
 
+import com.alibaba.fastjson.JSONObject;
 import com.example.bilibili.api.support.UserSupport;
 import com.example.bilibili.domain.JsonResponse;
+import com.example.bilibili.domain.PageResult;
 import com.example.bilibili.domain.User;
 import com.example.bilibili.domain.UserInfo;
+import com.example.bilibili.service.UserFollowingService;
 import com.example.bilibili.service.UserService;
 import com.example.bilibili.service.util.RSAUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 public class UserApi {
@@ -17,6 +22,9 @@ public class UserApi {
 
     @Autowired
     private UserSupport userSupport;
+
+    @Autowired
+    private UserFollowingService userFollowingService;
 
     @GetMapping("/users")
     public JsonResponse<User> getUserInfo() {
@@ -57,5 +65,21 @@ public class UserApi {
         userInfo.setUserId(userId);
         userService.updateUserInfos(userInfo);
         return JsonResponse.success();
+    }
+
+    @GetMapping("/user-infos")
+    public JsonResponse<PageResult<UserInfo>> pageListUserInfos(@RequestParam Integer no, @RequestParam Integer size, String nick) {
+        Long userId = userSupport.getCurrentUserId();
+        JSONObject params = new JSONObject();
+        params.put("no", no);
+        params.put("size", size);
+        params.put("nick", nick);
+        params.put("userId", userId);
+        PageResult<UserInfo> result = userService.pageListUserInfos(params);
+        if (result.getTotal() > 0) {
+            List<UserInfo> checkedUserInfoList = userFollowingService.checkFollowingStatus(result.getList(), userId);
+            result.setList(checkedUserInfoList);
+        }
+        return new JsonResponse<>(result);
     }
 }
