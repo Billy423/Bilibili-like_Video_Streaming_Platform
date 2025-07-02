@@ -56,7 +56,7 @@ public class UserFollowingService {
         Set<Long> followingIdSet = list.stream().map(UserFollowing::getFollowingId).collect(Collectors.toSet());
         List<UserInfo> userInfoList = new ArrayList<>();
         if(followingIdSet.size() > 0){
-            //userInfoList = userService.getUserInfoByUserIds(followingIdSet);
+            userInfoList = userService.getUserInfoByUserIds(followingIdSet);
         }
         for(UserFollowing userFollowing : list){
             for(UserInfo userInfo : userInfoList){

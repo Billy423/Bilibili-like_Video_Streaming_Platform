@@ -3,19 +3,19 @@ package com.example.bilibili.service;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.example.bilibili.dao.UserMomentsDao;
-import com.example.bilibili.domain.UserMoment;
+import com.example.bilibili.domain.*;
 import com.example.bilibili.domain.constant.UserMomentsConstant;
 import com.example.bilibili.service.util.RocketMQUtil;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.common.message.Message;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Service
 public class UserMomentsService {
@@ -32,7 +32,7 @@ public class UserMomentsService {
     public void addUserMoments(UserMoment userMoment) throws Exception {
         userMoment.setCreateTime(new Date());
         userMomentsDao.addUserMoments(userMoment);
-        DefaultMQProducer producer = (DefaultMQProducer) applicationContext.getBean("momentProducer");
+        DefaultMQProducer producer = (DefaultMQProducer)applicationContext.getBean("momentsProducer");
         Message msg = new Message(UserMomentsConstant.TOPIC_MOMENTS, JSONObject.toJSONString(userMoment).getBytes(StandardCharsets.UTF_8));
         RocketMQUtil.syncSendMsg(producer, msg);
     }
