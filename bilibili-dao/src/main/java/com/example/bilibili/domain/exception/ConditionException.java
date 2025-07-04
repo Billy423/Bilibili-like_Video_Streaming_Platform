@@ -1,6 +1,6 @@
 package com.example.bilibili.domain.exception;
 
-public class ConditionException extends RuntimeException{
+public class ConditionException extends RuntimeException {
 
     private static final long serialVersionUID = 1L; // for serialization
 

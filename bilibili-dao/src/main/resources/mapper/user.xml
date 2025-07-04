@@ -119,7 +119,7 @@
         WHERE
             userId = #{userId}
     </update>
-    
+
     <select id="getUserInfoByUserIds" resultType="com.example.bilibili.domain.UserInfo">
         SELECT
             *
@@ -128,7 +128,7 @@
         WHERE
             1=1
             <if test="userIdList != null and userIdList.size > 0">
-                AND userId IN 
+                AND userId IN
                 <foreach collection="userIdList" item="userId" index="index" open="(" close=")" separator=",">
                     #{userId}
                 </foreach>
@@ -159,6 +159,65 @@
             </if>
         ORDER BY id DESC
             limit #{start}, #{limit}
+    </select>
+
+    <delete id="deleteRefreshToken">
+        DELETE FROM
+            t_refresh_token
+        WHERE
+            refreshToken = #{refreshToken}
+          AND userId = #{userId}
+    </delete>
+
+    <delete id="deleteRefreshTokenByUserId" parameterType="java.lang.Long">
+        DELETE FROM
+            t_refresh_token
+        WHERE
+            userId = #{userId}
+    </delete>
+
+
+    <insert id="addRefreshToken">
+        INSERT INTO
+            t_refresh_token(
+            refreshToken,
+            userId,
+            createTime
+        ) VALUES (
+                   #{refreshToken},
+                   #{userId},
+                   #{createTime}
+               )
+    </insert>
+
+    <select id="getRefreshTokenDetail" parameterType="java.lang.String" resultType="com.example.bilibili.domain.RefreshTokenDetail">
+        SELECT
+            *
+        FROM
+            t_refresh_token
+        WHERE
+            refreshToken = #{refreshToken}
+    </select>
+
+    <select id="getRefreshTokenByUserId" parameterType="java.lang.Long" resultType="java.lang.String">
+        SELECT
+            refreshToken
+        FROM
+            t_refresh_token
+        WHERE
+            userId = #{userId}
+    </select>
+
+    <select id="batchGetUserInfoByUserIds" resultType="com.example.bilibili.domain.UserInfo">
+        SELECT
+            *
+        FROM
+            t_user_info
+        WHERE
+            userId in
+            <foreach collection="userIdList" item="userId" open="(" close=")" separator=",">
+                #{userId}
+            </foreach>
     </select>
 
 </mapper>
