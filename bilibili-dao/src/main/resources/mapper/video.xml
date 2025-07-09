@@ -71,4 +71,197 @@
         limit #{start}, #{limit}
     </select>
 
+    <select id="getVideoById" parameterType="java.lang.Long" resultType="com.example.bilibili.domain.Video">
+        SELECT
+            *
+        FROM
+            t_video
+        WHERE
+            id = #{id}
+    </select>
+
+    <insert id="addVideoLike" parameterType="com.example.bilibili.domain.VideoLike">
+        INSERT INTO
+            t_video_like(
+                userId,
+                videoId,
+                createTime
+        ) VALUES (
+                   #{userId},
+                   #{videoId},
+                   #{createTime}
+               )
+    </insert>
+
+    <delete id="deleteVideoLike">
+        DELETE FROM
+            t_video_like
+        WHERE
+            videoId = #{videoId}
+          AND userId = #{userId}
+    </delete>
+
+    <select id="getVideoLikes" parameterType="java.lang.Long" resultType="java.lang.Long">
+        SELECT
+            count(1)
+        FROM
+            t_video_like
+        WHERE
+            videoId = #{videoId}
+    </select>
+
+    <select id="getVideoLikeByVideoIdAndUserId" resultType="com.example.bilibili.domain.VideoLike">
+        SELECT
+            *
+        FROM
+            t_video_like
+        WHERE
+            videoId = #{videoId}
+          AND userId = #{userId}
+    </select>
+
+    <insert id="addVideoCollection" parameterType="com.example.bilibili.domain.VideoCollection">
+        INSERT INTO
+            t_video_collection(
+            userId,
+            videoId,
+            groupId,
+            createTime
+        ) VALUES (
+                   #{userId},
+                   #{videoId},
+                   #{groupId},
+                   #{createTime}
+               )
+    </insert>
+
+    <update id="updateVideoCollection">
+        UPDATE
+            t_video_collection
+        SET
+            groupId = #{groupId}
+        WHERE
+            videoId = #{videoId} AND userId = #{userId}
+    </update>
+
+    <delete id="deleteVideoCollection">
+        DELETE FROM
+            t_video_collection
+        WHERE
+            videoId = #{videoId} AND userId = #{userId}
+    </delete>
+
+    <select id="getVideoCollections" parameterType="java.lang.Long" resultType="java.lang.Long">
+        SELECT
+            count(1)
+        FROM
+            t_video_collection
+        WHERE
+            videoId = #{videoId}
+    </select>
+
+    <select id="getVideoCollectionByVideoIdAndUserId" resultType="com.example.bilibili.domain.VideoCollection">
+        SELECT
+            *
+        FROM
+            t_video_collection
+        WHERE
+            videoId = #{videoId} AND userId = #{userId}
+    </select>
+
+    <insert id="addVideoCoin" parameterType="com.example.bilibili.domain.VideoCoin">
+        INSERT INTO
+            t_video_coin(
+            userId,
+            videoId,
+            amount,
+            createTime
+        ) VALUES (
+                   #{userId},
+                   #{videoId},
+                   #{amount},
+                   #{createTime}
+               )
+    </insert>
+
+    <update id="updateVideoCoin" parameterType="com.example.bilibili.domain.VideoCoin">
+        UPDATE
+            t_video_coin
+        SET
+            amount = #{amount},
+            updateTime = #{updateTime}
+        WHERE
+            videoId = #{videoId} AND userId = #{userId}
+    </update>
+
+    <select id="getVideoCoinsAmount" parameterType="java.lang.Long" resultType="java.lang.Long">
+        SELECT
+            sum(amount)
+        FROM
+            t_video_coin
+        WHERE
+            videoId = #{videoId}
+    </select>
+
+    <insert id="addVideoComment" parameterType="com.example.bilibili.domain.VideoComment">
+        INSERT INTO
+            t_video_comment(
+            videoId,
+            userId,
+            comment,
+            replyUserId,
+            rootId,
+            createTime
+        ) VALUES (
+                   #{videoId},
+                   #{userId},
+                   #{comment},
+                   #{replyUserId},
+                   #{rootId},
+                   #{createTime}
+               )
+    </insert>
+
+    <select id="pageCountVideoComments" parameterType="java.util.Map" resultType="java.lang.Integer">
+        SELECT
+            count(1)
+        FROM
+            t_video_comment
+        WHERE
+            videoId = #{videoId} AND rootId IS NULL
+    </select>
+
+    <select id="pageListVideoComments" parameterType="java.util.Map" resultType="com.example.bilibili.domain.VideoComment">
+        SELECT
+            *
+        FROM
+            t_video_comment
+        WHERE
+            videoId = #{videoId} AND rootId IS NULL
+        ORDER BY id DESC
+            limit #{start}, #{limit}
+    </select>
+
+    <select id="batchGetVideoCommentsByRootIds" parameterType="java.util.List" resultType="com.example.bilibili.domain.VideoComment">
+        SELECT
+            *
+        FROM
+            t_video_comment
+        WHERE
+            rootId IN
+            <foreach collection="rootIdList" item="rootId" open="(" close=")" separator=",">
+                #{rootId}
+            </foreach>
+        ORDER BY id
+    </select>
+
+    <select id="getVideoDetails" parameterType="java.lang.Long" resultType="com.example.bilibili.domain.Video">
+        SELECT
+            *
+        FROM
+            t_video
+        WHERE
+            id = #{id}
+    </select>
+
 </mapper>
