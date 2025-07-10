@@ -6,6 +6,7 @@ import com.example.bilibili.domain.JsonResponse;
 import com.example.bilibili.domain.PageResult;
 import com.example.bilibili.domain.User;
 import com.example.bilibili.domain.UserInfo;
+import com.example.bilibili.service.ElasticSearchService;
 import com.example.bilibili.service.UserFollowingService;
 import com.example.bilibili.service.UserService;
 import com.example.bilibili.service.util.RSAUtil;
@@ -28,6 +29,9 @@ public class UserApi {
     @Autowired
     private UserFollowingService userFollowingService;
 
+    @Autowired
+    private ElasticSearchService elasticSearchService;
+
     @GetMapping("/users")
     public JsonResponse<User> getUserInfo() {
         Long userId = userSupport.getCurrentUserId();
@@ -44,6 +48,7 @@ public class UserApi {
     @PostMapping("/users")
     public JsonResponse<String> addUser(@RequestBody User user) {
         userService.addUser(user);
+        elasticSearchService.addUserInfo(user.getUserInfo());
         return JsonResponse.success();
     }
 

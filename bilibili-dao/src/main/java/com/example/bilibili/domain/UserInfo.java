@@ -1,12 +1,19 @@
 package com.example.bilibili.domain;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
+
 import java.util.Date;
 
+@Document(indexName = "user-infos")
 public class UserInfo {
-
+    @Id
     private Long id;
 
     private Long userId;
 
+    @Field(type = FieldType.Text)
     private String nick;
 
     private String avatar;
@@ -17,12 +24,15 @@ public class UserInfo {
 
     private String birth;
 
+    @Field(type = FieldType.Date)
     private Date createTime;
 
+    @Field(type = FieldType.Date)
     private Date updateTime;
 
     private Boolean followed;
 
+    @Field(type = FieldType.Integer)
     private Integer fanCount;
 
     public Long getId() {
