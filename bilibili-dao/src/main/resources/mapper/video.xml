@@ -264,4 +264,66 @@
             id = #{id}
     </select>
 
+    <insert id="addVideoView" parameterType="com.example.bilibili.domain.VideoView">
+        INSERT INTO
+            t_video_view(
+                videoId,
+                userId,
+                clientId,
+                ip,
+                createTime
+        ) VALUES (
+                   #{videoId},
+                   #{userId},
+                   #{clientId},
+                   #{ip},
+                   #{createTime}
+               )
+    </insert>
+
+    <select id="getVideoViewCounts" parameterType="java.lang.Long" resultType="java.lang.Integer">
+        SELECT
+            count(1)
+        FROM
+            t_video_view
+        WHERE
+            videoId = #{videoId}
+    </select>
+
+    <select id="getVideoView" parameterType="java.util.Map" resultType="com.example.bilibili.domain.VideoView">
+        SELECT
+            *
+        FROM
+            t_video_view
+        WHERE
+            videoId = #{videoId}
+            <if test="userId == null and clientId != null">
+                AND clientId = #{clientId} AND userId IS NULL
+            </if>
+            <if test="userId != null">
+                AND userId = #{userId}
+            </if>
+            <if test="ip != null and ip != '' ">
+                AND ip = #{ip}
+            </if>
+            <if test="today != null and today != '' ">
+                AND DATE_FORMAT(createTime,'%Y-%m-%d') = #{today}
+            </if>
+    </select>
+
+    <select id="getAllUserPreference" resultType="com.example.bilibili.domain.UserPreference">
+        SELECT
+            userId,
+            videoId,
+            sum(case operationType
+                    when '0' then 6
+                    when '1' then 2
+                    when '2' then 2
+                    else 0 end
+            ) AS `value`
+        FROM
+            t_video_operation
+        GROUP BY userId, videoId
+    </select>
+
 </mapper>

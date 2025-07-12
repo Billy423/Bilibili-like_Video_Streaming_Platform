@@ -4,11 +4,13 @@ import com.example.bilibili.api.support.UserSupport;
 import com.example.bilibili.domain.*;
 import com.example.bilibili.service.ElasticSearchService;
 import com.example.bilibili.service.VideoService;
+import org.apache.mahout.cf.taste.common.TasteException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -138,6 +140,34 @@ public class VideoApi {
     public JsonResponse<Map<String, Object>> getVideoDetails(@RequestParam Long videoId){
         Map<String, Object> result = videoService.getVideoDetails(videoId);
         return new JsonResponse<>(result);
+    }
+
+    @PostMapping("/video-views")
+    public JsonResponse<String> addVideoView(@RequestBody VideoView videoView, HttpServletRequest request) {
+        Long userId;
+        try {
+            userId = userSupport.getCurrentUserId();
+            videoView.setUserId(userId);
+            videoService.addVideoView(videoView, request);
+        } catch (Exception e){
+            videoService.addVideoView(videoView, request);
+        }
+        //Sync video view count to Elasticsearch
+        elasticSearchService.updateVideoViewCount(videoView.getVideoId());
+        return JsonResponse.success();
+    }
+
+    @GetMapping("/video-view-counts")
+    public JsonResponse<Integer> getVideoViewCounts(@RequestParam Long videoId) {
+        Integer count =  videoService.getVideoViewCounts(videoId);
+        return new JsonResponse<>(count);
+    }
+
+    @GetMapping("/recommendations")
+    public JsonResponse<List<Video>> recommend() throws TasteException {
+        Long userId = userSupport.getCurrentUserId();
+        List<Video> list = videoService.recommend(userId);
+        return new JsonResponse<>(list);
     }
 
 
