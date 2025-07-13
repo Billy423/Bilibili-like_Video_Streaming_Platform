@@ -5,6 +5,7 @@ import com.example.bilibili.service.websocket.WebSocketService;
 import com.github.tobato.fastdfs.FdfsClientConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 @EnableAsync
 @EnableScheduling
+@EnableFeignClients(basePackages = "com.example.bilibili.service.feign")
 public class BilibiliApp {
     public static void main( String[] args ) {
         ApplicationContext app = SpringApplication.run(BilibiliApp.class, args);
