@@ -8,7 +8,10 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import com.example.bilibili.domain.constant.SearchConstant;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -105,6 +108,28 @@ public class ElasticSearchService {
             video.setViewCount(viewCount + 1);
             videoRepository.save(video);
         });
+    }
+
+    public Page<Video> pageListSearchVideos(String keyword, Integer pageSize, Integer pageNo, String searchType) {
+        PageRequest pageRequest = PageRequest.of(pageNo, pageSize);
+        switch (searchType) {
+            case SearchConstant.CREATE_TIME:
+                return videoRepository.findByTitleOrDescriptionOrderByCreateTimeDesc(keyword, keyword, pageRequest);
+            case SearchConstant.DANMU_COUNT:
+                return videoRepository.findByTitleOrDescriptionOrderByDanmuCountDesc(keyword, keyword, pageRequest);
+            default:
+                return videoRepository.findByTitleOrDescriptionOrderByViewCountDesc(keyword, keyword, pageRequest);
+        }
+    }
+
+    public Page<UserInfo> pageListSearchUsers(String keyword, Integer pageSize, Integer pageNo, String searchType) {
+        PageRequest pageRequest = PageRequest.of(pageNo, pageSize);
+        switch (searchType) {
+            case SearchConstant.USER_FAN_COUNT_ASC:
+                return userInfoRepository.findByNickOrderByFanCountAsc(keyword, pageRequest);
+            default:
+                return userInfoRepository.findByNickOrderByFanCountDesc(keyword, pageRequest);
+        }
     }
 
 }

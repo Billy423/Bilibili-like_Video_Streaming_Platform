@@ -35,6 +35,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.List;
@@ -334,6 +335,20 @@ public class VideoService {
         return videoDao.getVideoViewCounts(videoId);
     }
 
+    public List<Video> getVideoCount(List<Video> videoList){
+        if(!videoList.isEmpty()){
+            Set<Long> videoIdSet = videoList.stream().map(Video :: getId)
+                    .collect(Collectors.toSet());
+            Map<Long, Integer> viewCountMap = this.batchCountVideoView(videoIdSet);
+            Map<Long, Integer> danmuCountMap = this.batchCountVideoDanmu(videoIdSet);
+            videoList.forEach(video -> {
+                video.setViewCount(viewCountMap.get(video.getId()));
+                video.setDanmuCount(danmuCountMap.get(video.getId()));
+            });
+        }
+        return videoList;
+    }
+
     /**
      * Collaborative filtering based on user
      * @param userId user id
@@ -392,5 +407,61 @@ public class VideoService {
         }
         return new GenericDataModel(fastByIdMap);
     }
+
+    public Map<Long, Integer>  batchCountVideoView(Set<Long> videoIdSet){
+        List<VideoViewCount> viewCount = videoDao.getVideoViewCountByVideoIds(videoIdSet);
+        return viewCount.stream()
+                .collect(Collectors.toMap(VideoViewCount::getVideoId,
+                        VideoViewCount::getCount));
+    }
+
+    public Map<Long, Integer> batchCountVideoDanmu(Set<Long> videoIdSet){
+        List<VideoDanmuCount> danmuCount = videoDao.getVideoDanmuCountByVideoIds(videoIdSet);
+        return danmuCount.stream()
+                .collect(Collectors.toMap(VideoDanmuCount::getVideoId,
+                        VideoDanmuCount::getCount));
+    }
+
+    public List<VideoTag> getVideoTagsByVideoId(Long videoId) {
+        return videoDao.getVideoTagsByVideoId(videoId);
+    }
+
+    public void deleteVideoTags(List<Long> tagIdList, Long videoId) {
+        videoDao.deleteVideoTags(tagIdList, videoId);
+    }
+
+    public List<Video> getVideoRecommendations(String recommendType, Long userId){
+        List<Video> list = new ArrayList<>();
+        try {
+            // Recommend based on the recommendation type:
+            //	1.	User-based recommendation
+            //	2.	Content-based recommendation
+            if("1".equals(recommendType)){
+                list = this.recommend(userId);
+            }else{
+                // Identify the user’s favorite video to serve as the basis for the recommendation.
+                List<UserPreference> preferencesList = videoDao.getAllUserPreference();
+                Optional<Long> itemIdOpt = preferencesList.stream().filter(item -> item.getUserId().equals(userId))
+                        .max(Comparator.comparing(UserPreference :: getValue)).map(UserPreference::getVideoId);
+                if(itemIdOpt.isPresent()){
+                    list = this.recommendByItem(userId, itemIdOpt.get(), DEFAULT_RECOMMEND_NUMBER);
+                }
+            }
+            // If no recommendation content is calculated, the latest videos will be displayed by default.
+            if(list.isEmpty()){
+                list = this.pageListVideos(3,1,null).getList();
+            }else{
+                list.forEach(video -> video.setThumbnail(fastdfsUrl+video.getThumbnail()));
+            }
+        }catch (Exception e){
+            throw new ConditionException("Recommendaiton failed");
+        }
+        return list;
+    }
+
+    public List<Video> getVisitorVideoRecommendations() {
+        return this.pageListVideos(DEFAULT_RECOMMEND_NUMBER,1,null).getList();
+    }
+
 
 }

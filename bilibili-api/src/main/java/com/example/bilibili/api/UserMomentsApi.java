@@ -2,6 +2,7 @@ package com.example.bilibili.api;
 
 import com.example.bilibili.api.support.UserSupport;
 import com.example.bilibili.domain.JsonResponse;
+import com.example.bilibili.domain.PageResult;
 import com.example.bilibili.domain.UserMoment;
 import com.example.bilibili.domain.annotation.ApiLimitedRole;
 import com.example.bilibili.domain.annotation.DataLimited;
@@ -36,6 +37,16 @@ public class UserMomentsApi {
         userMoment.setUserId(userId);
         userMomentsService.addUserMoments(userMoment);
         return JsonResponse.success();
+    }
+
+    @GetMapping("/moments")
+    public JsonResponse<PageResult<UserMoment>> pageListMoments(@RequestParam("size") Integer size,
+                                                                @RequestParam("no") Integer no,
+                                                                String type){
+        Long userId = userSupport.getCurrentUserId();
+        PageResult<UserMoment> list = userMomentsService.pageListMoments(size, no,
+                userId, type);
+        return new JsonResponse<>(list);
     }
 
 }

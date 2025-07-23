@@ -170,5 +170,21 @@ public class VideoApi {
         return new JsonResponse<>(list);
     }
 
+    // Video recommendation (for visitors)
+    @GetMapping("/visitor-video-recommendations")
+    public JsonResponse<List<Video>> getVisitorVideoRecommendations() {
+        List<Video> list = videoService.getVisitorVideoRecommendations();
+        return new JsonResponse<>(list);
+    }
+
+    // Video recommendation (combined)
+    @GetMapping("/video-recommendations")
+    public JsonResponse<List<Video>> getVideoRecommendations(@RequestParam String recommendType) {
+        Long userId = userSupport.getCurrentUserId();
+        List<Video> list = videoService.getVideoRecommendations(recommendType, userId);
+        return new JsonResponse<>(list);
+    }
+
+
 
 }

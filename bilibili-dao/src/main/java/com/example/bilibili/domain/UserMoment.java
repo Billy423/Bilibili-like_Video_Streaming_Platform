@@ -16,7 +16,7 @@ public class UserMoment {
 
     private Date updateTime;
 
-//    private Content content;
+    private Content content;
 
     private UserInfo userInfo;
 
@@ -68,13 +68,13 @@ public class UserMoment {
         this.updateTime = updateTime;
     }
 
-//    public Content getContent() {
-//        return content;
-//    }
-//
-//    public void setContent(Content content) {
-//        this.content = content;
-//    }
+    public Content getContent() {
+        return content;
+    }
+
+    public void setContent(Content content) {
+        this.content = content;
+    }
 
     public UserInfo getUserInfo() {
         return userInfo;

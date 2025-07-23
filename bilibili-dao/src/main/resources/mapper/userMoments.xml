@@ -3,6 +3,7 @@
         PUBLIC "-//mybatis.org//DTD MAPPER 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.bilibili.dao.UserMomentsDao">
+
     <insert id="addUserMoments" parameterType="com.example.bilibili.domain.UserMoment" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO
             t_user_moments(
@@ -17,4 +18,62 @@
                    #{createTime}
                )
     </insert>
+
+    <select id="pageCountMoments" resultType="java.lang.Integer">
+        SELECT
+            count( 1 )
+        FROM
+            t_user_moments
+        WHERE
+            userId IN (
+                SELECT
+                    followingId
+                FROM
+                    t_user_following
+                WHERE
+                    userId = #{userId}
+            )
+            <if test="type != null and type != '' ">
+                and type = #{type}
+            </if>
+    </select>
+
+    <resultMap id="PageListMomentsResultMap" type="com.example.bilibili.domain.UserMoment">
+        <id column="id" property="id"/>
+        <id column="userId" property="userId"/>
+        <id column="type" property="type"/>
+        <id column="contentId" property="contentId"/>
+        <id column="createTime" property="createTime"/>
+        <association property="content" javaType="com.example.bilibili.domain.Content">
+            <id column="contentId" property="id"/>
+            <id column="contentDetail" property="contentDetail"
+                typeHandler="com.example.bilibili.service.handler.JsonObjectTypeHandler"/>
+            <id column="contentCreateTime" property="createTime"/>
+        </association>
+    </resultMap>
+
+    <select id="pageListMoments" resultMap="PageListMomentsResultMap">
+        SELECT
+            um.*,
+            c.id as contentId,
+            c.contentDetail as contentDetail,
+            c.createTime as contentCreateTime
+        FROM
+            t_user_moments um left join t_content c on um.contentId=c.id
+        WHERE
+            um.userId IN (
+                SELECT
+                    followingId
+                FROM
+                    t_user_following
+                WHERE
+                    userId = #{userId}
+            )
+            <if test="type != null and type != '' ">
+                and um.type = #{type}
+            </if>
+        order by id desc
+            limit #{start}, #{limit}
+    </select>
+
 </mapper>

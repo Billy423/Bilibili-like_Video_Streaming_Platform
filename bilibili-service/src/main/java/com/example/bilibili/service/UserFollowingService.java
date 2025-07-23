@@ -85,6 +85,11 @@ public class UserFollowingService {
         return result;
     }
 
+    /**
+     * 1. Retrieve current user's follower list.
+     * 2. Query the basic infos of followers based on their user ids.
+     * 3. Check whether the current user has already followed each follower.
+     */
     public List<UserFollowing> getUserFans(Long userId){
         List<UserFollowing> fanList = userFollowingDao.getUserFans(userId);
         Set<Long> fanIdSet = fanList.stream().map(UserFollowing::getUserId).collect(Collectors.toSet());

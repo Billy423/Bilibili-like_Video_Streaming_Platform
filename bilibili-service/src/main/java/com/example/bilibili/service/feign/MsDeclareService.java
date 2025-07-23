@@ -20,4 +20,7 @@ public interface MsDeclareService {
     @GetMapping("/timeout")
     public String timeout(@RequestParam Long time);
 
+    @GetMapping("/timeout1")
+    public String timeout1(@RequestParam Long time);
+
 }

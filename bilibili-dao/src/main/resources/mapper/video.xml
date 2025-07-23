@@ -326,4 +326,66 @@
         GROUP BY userId, videoId
     </select>
 
+    <select id="batchGetVideosByIds" resultType="com.example.bilibili.domain.Video">
+        SELECT
+            *
+        FROM
+            t_video
+        WHERE
+            id IN
+            <foreach collection="idList" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+    </select>
+
+    <select id="getVideoTagsByVideoId" parameterType="java.lang.Long" resultType="com.example.bilibili.domain.VideoTag">
+        SELECT
+            tvt.videoId,
+            tvt.tagId,
+            tt.name tagName
+        FROM
+            t_video_tag tvt left join t_tag tt on tvt.tagId = tt.id
+        where
+            tvt.videoId = #{videoId}
+    </select>
+
+    <delete id="deleteVideoTags">
+        DELETE FROM
+            t_video_tag
+        WHERE
+            videoId = #{videoId}
+            and tagId in
+            <foreach collection="tagIdList" item="tagId" open="(" close=")" separator=",">
+                #{tagId}
+            </foreach>
+    </delete>
+
+    <select id="getVideoViewCountByVideoIds" resultType="com.example.bilibili.domain.VideoViewCount">
+        SELECT
+            videoId,
+            count( id ) count
+        FROM
+            t_video_view
+        WHERE
+            videoId in
+            <foreach collection="videoIds" item="videoId" open="(" close=")" separator=",">
+                #{videoId}
+            </foreach>
+        GROUP BY videoId
+    </select>
+
+    <select id="getVideoDanmuCountByVideoIds" resultType="com.example.bilibili.domain.VideoDanmuCount">
+        SELECT
+            videoId,
+            count( id ) count
+        FROM
+            t_danmu
+        WHERE
+            videoId in
+            <foreach collection="videoIds" item="videoId" open="(" close=")" separator=",">
+                #{videoId}
+            </foreach>
+        GROUP BY videoId
+    </select>
+
 </mapper>

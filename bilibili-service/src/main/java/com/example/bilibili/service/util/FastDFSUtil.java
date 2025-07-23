@@ -2,6 +2,7 @@ package com.example.bilibili.service.util;
 
 import com.github.tobato.fastdfs.domain.fdfs.FileInfo;
 import com.github.tobato.fastdfs.domain.fdfs.StorePath;
+import com.github.tobato.fastdfs.domain.proto.storage.DownloadCallback;
 import com.github.tobato.fastdfs.service.AppendFileStorageClient;
 import com.github.tobato.fastdfs.service.FastFileStorageClient;
 import com.example.bilibili.domain.exception.ConditionException;
@@ -216,6 +217,26 @@ public class FastDFSUtil {
         response.setContentLength((int)len);
         response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
         HttpUtil.get(url, headers, response);
+    }
+
+    // Download file
+    public void downLoadFile(String url, String localPath) {
+        fastFileStorageClient.downloadFile(DEFAULT_GROUP, url,
+                new DownloadCallback<String>() {
+                    @Override
+                    public String recv(InputStream ins) throws IOException {
+                        File file = new File(localPath);
+                        OutputStream os = new FileOutputStream(file);
+                        int len = 0;
+                        byte[] buffer = new byte[1024];
+                        while ((len = ins.read(buffer)) != -1) {
+                            os.write(buffer, 0, len);
+                        }
+                        os.close();
+                        ins.close();
+                        return "success";
+                    }
+                });
     }
 
 }

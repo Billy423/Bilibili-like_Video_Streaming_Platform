@@ -2,19 +2,19 @@ package com.example.bilibili.domain;
 
 import java.util.Date;
 
-public class VideoCollection {
+public class VideoBinaryPicture {
 
     private Long id;
 
     private Long videoId;
 
-    private Long userId;
+    private Integer frameNo;
 
-    private Long groupId;
+    private String url;
+
+    private Long videoTimestamp;
 
     private Date createTime;
-
-    private Video videoInfo;
 
     public Long getId() {
         return id;
@@ -32,20 +32,20 @@ public class VideoCollection {
         this.videoId = videoId;
     }
 
-    public Long getUserId() {
-        return userId;
+    public Integer getFrameNo() {
+        return frameNo;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setFrameNo(Integer frameNo) {
+        this.frameNo = frameNo;
     }
 
-    public Long getGroupId() {
-        return groupId;
+    public String getUrl() {
+        return url;
     }
 
-    public void setGroupId(Long groupId) {
-        this.groupId = groupId;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public Date getCreateTime() {
@@ -56,12 +56,11 @@ public class VideoCollection {
         this.createTime = createTime;
     }
 
-    public Video getVideoInfo() {
-        return videoInfo;
+    public Long getVideoTimestamp() {
+        return videoTimestamp;
     }
 
-    public void setVideoInfo(Video videoInfo) {
-        this.videoInfo = videoInfo;
+    public void setVideoTimestamp(Long videoTimestamp) {
+        this.videoTimestamp = videoTimestamp;
     }
-
 }
