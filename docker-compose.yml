@@ -97,7 +97,7 @@ services:
 
   # FastDFS Tracker
   fastdfs-tracker:
-    image: season/fastdfs:1.2
+    image: delron/fastdfs:latest
     container_name: bilibili-fastdfs-tracker
     restart: unless-stopped
     ports:
@@ -110,7 +110,7 @@ services:
 
   # FastDFS Storage
   fastdfs-storage:
-    image: season/fastdfs:1.2
+    image: delron/fastdfs:latest
     container_name: bilibili-fastdfs-storage
     restart: unless-stopped
     ports:

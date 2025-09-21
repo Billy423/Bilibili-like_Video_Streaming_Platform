@@ -197,7 +197,7 @@ services:
 
   # FastDFS
   fastdfs-storage:
-    image: season/fastdfs:1.2
+    image: delron/fastdfs:latest
     container_name: bilibili-fastdfs
     ports:
       - "8888:8888"
