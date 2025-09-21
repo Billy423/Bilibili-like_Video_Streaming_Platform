@@ -16,19 +16,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.awt.dnd.DropTarget;
 import java.util.*;
 
+/**
+ * User Service - Handles user registration, authentication, and profile management
+ * Key features: RSA password encryption, JWT token management, role-based authorization
+ */
 @Service
 public class UserService {
 
     @Autowired
     private UserDao userDao;
     @Autowired
-    private UserAuthService userAuthService;
+    private UserAuthService userAuthService; // For role management
 
     @Transactional
     public void addUser(User user) {
+        // Validate phone number
         String phone = user.getPhone();
         if (StringUtils.isNullOrEmpty(phone)) {
             throw new ConditionException("Phone number cannot be null or empty!");
@@ -38,22 +42,23 @@ public class UserService {
             throw new ConditionException("This phone is already registered!");
         }
 
+        // Password encryption: RSA decrypt -> MD5 hash with salt
         Date now = new Date();
         String salt = String.valueOf(now.getTime());
         String password = user.getPassword();
         String rawPassword;
         try {
-            rawPassword = RSAUtil.decrypt(password);
+            rawPassword = RSAUtil.decrypt(password); // Decrypt RSA-encrypted password from client
         } catch (Exception e) {
             throw new ConditionException("Decrypt password failed!");
         }
-        String md5Password = MD5Util.sign(rawPassword, salt, "UTF-8");
+        String md5Password = MD5Util.sign(rawPassword, salt, "UTF-8"); // Hash with salt
         user.setSalt(salt);
         user.setPassword(md5Password);
         user.setCreateTime(now);
         userDao.addUser(user);
 
-        //Create user info
+        // Create default user info and assign default role
         UserInfo userInfo = new UserInfo();
         userInfo.setUserId(user.getId());
         userInfo.setNick(UserConstant.DEFAULT_NICK);

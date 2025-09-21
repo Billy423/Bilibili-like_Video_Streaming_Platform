@@ -14,6 +14,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Map;
 
+/**
+ * Demo API Controller - Demonstrates various technical features
+ * Key features: FastDFS file slicing, Elasticsearch integration, microservices communication, circuit breaker pattern
+ */
 @RestController
 public class DemoApi {
 
@@ -21,15 +25,15 @@ public class DemoApi {
     private DemoService demoService;
 
     @Autowired
-    public FastDFSUtil fastDFSUtil;
+    public FastDFSUtil fastDFSUtil; // For distributed file storage and video slicing
     @Autowired
-    private ElasticSearchService elasticSearchService;
+    private ElasticSearchService elasticSearchService; // For search functionality
 
     @Autowired
-    private MsDeclareService msDeclareService;
+    private MsDeclareService msDeclareService; // Feign client for microservice communication
 
     @Autowired
-    private CircuitBreakerFactory<?, ?> circuitBreakerFactory;
+    private CircuitBreakerFactory<?, ?> circuitBreakerFactory; // Resilience4j circuit breaker
 
     @GetMapping("/query")
     public Map<String, Object> query(Long id) {
@@ -38,32 +42,37 @@ public class DemoApi {
 
     @GetMapping("/slices")
     public void slices(MultipartFile file) throws Exception {
+        // Convert video file to slices for streaming (FastDFS)
         fastDFSUtil.convertFileToSlices(file);
     }
 
     @GetMapping("/es-videos")
     public JsonResponse<Video> getEsVideos(@RequestParam String keyword) {
+        // Search videos using Elasticsearch
         Video video = elasticSearchService.getVideos(keyword);
         return new JsonResponse<>(video);
     }
 
     @GetMapping("/demos")
     public Long msget(@RequestParam Long id) {
+        // Microservice communication via Feign client
         return msDeclareService.msget(id);
     }
 
     @PostMapping("/demos")
     public Map<String, Object> mspost(@RequestBody Map<String, Object> params) {
+        // Microservice communication via Feign client
         return msDeclareService.mspost(params);
     }
 
     // Resilience4j Circuit Breaker Example
     @GetMapping("/timeout")
     public String circuitBreakerWithResilience4j(@RequestParam Long time) {
+        // Demonstrate circuit breaker pattern for fault tolerance
         CircuitBreaker circuitBreaker = circuitBreakerFactory.create("timeoutCircuitBreaker");
         return circuitBreaker.run(
                 () -> msDeclareService.timeout(time),
-                throwable -> fallback(time)
+                throwable -> fallback(time) // Fallback when service fails
         );
     }
 

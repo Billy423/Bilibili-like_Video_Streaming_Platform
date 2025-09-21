@@ -13,6 +13,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Video API Controller - Handles video upload, streaming, interactions, and recommendations
+ * Key features: Video slicing for streaming, Apache Mahout recommendations, Elasticsearch integration
+ */
 @RestController
 public class VideoApi {
 
@@ -23,13 +27,14 @@ public class VideoApi {
     private UserSupport userSupport;
 
     @Autowired
-    private ElasticSearchService elasticSearchService;
+    private ElasticSearchService elasticSearchService; // For video search and analytics
 
     @PostMapping("/videos")
     public JsonResponse<String> addVideos(@RequestBody Video video){
         Long userId = userSupport.getCurrentUserId();
         video.setUserId(userId);
         videoService.addVideos(video);
+        // Index video in Elasticsearch for search functionality
         elasticSearchService.addVideo(video);
         return JsonResponse.success();
     }
@@ -38,6 +43,7 @@ public class VideoApi {
     public JsonResponse<PageResult<Video>> pageListVideos(@RequestParam Integer size,
                                                           @RequestParam Integer no,
                                                           String area){
+        // Paginated video listing with area filtering
         PageResult<Video> result = videoService.pageListVideos(size, no ,area);
         return new JsonResponse<>(result);
     }
@@ -46,6 +52,7 @@ public class VideoApi {
     public void viewVideoOnlineBySlices(HttpServletRequest request,
                                         HttpServletResponse response,
                                         String url) {
+        // Stream video in slices for better performance and user experience
         videoService.viewVideoOnlineBySlices(request, response, url);
     }
 
@@ -65,6 +72,7 @@ public class VideoApi {
 
     @GetMapping("/video-likes")
     public JsonResponse<Map<String, Object>> getVideoLikes(@RequestParam Long videoId) {
+        // Get like count and user's like status (works for both logged-in and anonymous users)
         Long userId = null;
         try {
             userId = userSupport.getCurrentUserId();
@@ -144,6 +152,7 @@ public class VideoApi {
 
     @PostMapping("/video-views")
     public JsonResponse<String> addVideoView(@RequestBody VideoView videoView, HttpServletRequest request) {
+        // Track video views (works for both logged-in and anonymous users)
         Long userId;
         try {
             userId = userSupport.getCurrentUserId();
@@ -152,7 +161,7 @@ public class VideoApi {
         } catch (Exception e){
             videoService.addVideoView(videoView, request);
         }
-        //Sync video view count to Elasticsearch
+        // Sync video view count to Elasticsearch for analytics
         elasticSearchService.updateVideoViewCount(videoView.getVideoId());
         return JsonResponse.success();
     }
@@ -165,6 +174,7 @@ public class VideoApi {
 
     @GetMapping("/recommendations")
     public JsonResponse<List<Video>> recommend() throws TasteException {
+        // Personalized video recommendations using Apache Mahout collaborative filtering
         Long userId = userSupport.getCurrentUserId();
         List<Video> list = videoService.recommend(userId);
         return new JsonResponse<>(list);
@@ -173,6 +183,7 @@ public class VideoApi {
     // Video recommendation (for visitors)
     @GetMapping("/visitor-video-recommendations")
     public JsonResponse<List<Video>> getVisitorVideoRecommendations() {
+        // Popular videos for anonymous users
         List<Video> list = videoService.getVisitorVideoRecommendations();
         return new JsonResponse<>(list);
     }
@@ -180,6 +191,7 @@ public class VideoApi {
     // Video recommendation (combined)
     @GetMapping("/video-recommendations")
     public JsonResponse<List<Video>> getVideoRecommendations(@RequestParam String recommendType) {
+        // Combined recommendation system (user-based, item-based, or popular)
         Long userId = userSupport.getCurrentUserId();
         List<Video> list = videoService.getVideoRecommendations(recommendType, userId);
         return new JsonResponse<>(list);

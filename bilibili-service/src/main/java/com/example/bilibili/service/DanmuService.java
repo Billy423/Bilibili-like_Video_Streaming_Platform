@@ -13,16 +13,20 @@ import org.springframework.stereotype.Service;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+/**
+ * Danmu Service - Handles real-time bullet comments (danmu) with Redis caching
+ * Key features: Redis caching for performance, async processing, time-based filtering
+ */
 @Service
 public class DanmuService {
 
-    private static final String DANMU_KEY = "dm-video-";
+    private static final String DANMU_KEY = "dm-video-"; // Redis key prefix for video danmu
 
     @Autowired
     private DanmuDao danmuDao;
 
     @Autowired
-    private RedisTemplate<String, String> redisTemplate;
+    private RedisTemplate<String, String> redisTemplate; // For caching danmu data
 
     public void addDanmu(Danmu danmu){
         danmuDao.addDanmu(danmu);
@@ -30,6 +34,7 @@ public class DanmuService {
 
     @Async
     public void asyncAddDanmu(Danmu danmu){
+        // Asynchronously save danmu to database for better performance
         danmuDao.addDanmu(danmu);
     }
 
@@ -72,6 +77,7 @@ public class DanmuService {
     }
 
     public void addDanmusToRedis(Danmu danmu) {
+        // Add new danmu to Redis cache for real-time display
         String key = DANMU_KEY + danmu.getVideoId();
         String value = redisTemplate.opsForValue().get(key);
         List<Danmu> list = new ArrayList<>();
