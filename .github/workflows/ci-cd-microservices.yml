@@ -121,7 +121,29 @@ jobs:
     - name: Start main API service with dependencies
       run: |
         docker compose up -d
-        sleep 60  # Wait for services to start
+        
+    - name: Check service status
+      run: |
+        echo "Checking Docker services status..."
+        docker compose ps
+        echo "Checking if port 8080 is listening..."
+        netstat -tlnp | grep :8080 || echo "Port 8080 not yet listening"
+
+    - name: Wait for backend to be ready
+      run: |
+        echo "Waiting for backend service to be ready..."
+        for i in {1..60}; do
+          if curl -f http://localhost:8080/actuator/health >/dev/null 2>&1; then
+            echo "Backend service is ready!"
+            exit 0
+          fi
+          echo "Attempt $i/60: Backend not ready yet, waiting 5 seconds..."
+          sleep 5
+        done
+        echo "Backend service failed to start within 5 minutes"
+        echo "Checking service logs for debugging..."
+        docker compose logs bilibili-api
+        exit 1
 
     - name: Run integration tests
       run: |
