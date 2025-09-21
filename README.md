@@ -1,20 +1,38 @@
 # 🎬 Bilibili-like Video Streaming Platform
 
-A full-stack video streaming platform inspired by Bilibili, built with Spring Boot, featuring user management, video streaming, real-time chat, recommendation engine, and comprehensive DevOps practices.
+A comprehensive full-stack video streaming platform inspired by Bilibili, built with microservices architecture, featuring user management, video streaming, real-time chat, recommendation engine, and enterprise-level DevOps practices.
 
-## Architecture Overview
+## 1 - Complete Microservices Architecture
 
-This project follows a **layered architecture** with clear separation of concerns:
+This project implements a **full-stack microservices architecture** with the following components:
 
 ![Architecture](./images/architecture.png)
 
-## Technology Stack
+### ** Project Structure**
+```
+bilibili-ecosystem/
+├── bilibili/                   # Main API Service (This Repository)
+├── bilibili-eureka/            # Service Registry
+├── bilibili-gateway/           # API Gateway
+├── bilibili-ms/                # Demo Microservice
+└── bilibili-vue/               # Vue.js Frontend
+```
+
+### **🔗 Related Repositories**
+- **[Eureka Service Registry](https://github.com/Billy423/bilibili-eureka)** - Service discovery and registration
+- **[API Gateway](https://github.com/Billy423/bilibili-api-gateway)** - Centralized routing and security
+- **[Microservice](https://github.com/Billy423/bilibili-microservice)** - Demo endpoints and testing
+- **[Vue.js Frontend](https://github.com/Billy423/bilibili-vue)** - Modern user interface
+
+## 2 - Technology Stack
 
 ### **Backend Technologies**
-- **Spring Boot 3** - Main application framework
+- **Spring Boot 3.1.6** - Main application framework
 - **Spring Cloud 2022.0.5** - Microservices support
+- **Netflix Eureka** - Service discovery and registration
+- **Spring Cloud Gateway** - API gateway and routing
 - **MyBatis 3.5.7** - Object-relational mapping
-- **MySQL 8.0** - Primary database
+- **MySQL 8.0.31** - Primary database
 - **Redis 7** - Caching and session management
 - **Elasticsearch 8.6.2** - Full-text search
 - **RocketMQ 4.9.1** - Message queuing
@@ -22,9 +40,17 @@ This project follows a **layered architecture** with clear separation of concern
 - **WebSocket** - Real-time communication
 - **Apache Mahout** - Recommendation algorithms
 
+### **Frontend Technologies**
+- **Vue.js 2.6.14** - Progressive JavaScript framework
+- **Element UI 2.15.14** - Vue component library
+- **Vuex 3.6.2** - State management
+- **Vue Router 3.6.5** - Client-side routing
+- **Axios 1.6.2** - HTTP client
+- **XGPlayer 3.0.9** - Video player
+
 ### **DevOps & Infrastructure**
-- **Docker & Docker Compose** - Containerization
-- **GitHub Actions** - CI/CD pipeline
+- **Docker & Docker Compose** - Multi-service containerization
+- **GitHub Actions** - Multi-service CI/CD pipeline
 - **Nginx** - Load balancing and reverse proxy
 - **Maven** - Build automation
 - **Make** - Developer tooling
@@ -35,7 +61,7 @@ This project follows a **layered architecture** with clear separation of concern
 - **MD5 Hashing** - Password hashing with salt
 - **AOP-based Authorization** - Role-based access control
 
-## Quick Start
+## 3 - Quick Start
 
 ### **Prerequisites**
 - Java 17+
@@ -102,6 +128,41 @@ mvn spring-boot:run -Dspring.profiles.active=test
 java -jar bilibili-api/target/bilibili-api-*.jar --spring.profiles.active=test
 ```
 
+## 4 - Microservices Deployment
+
+### **Complete Microservices Stack**
+```bash
+# Start all microservices with Docker Compose
+docker compose -f docker-compose.microservices.yml up -d
+
+# Check service health
+make health-ms
+
+# View logs
+docker compose -f docker-compose.microservices.yml logs -f
+
+# Stop all services
+docker compose -f docker-compose.microservices.yml down
+```
+
+### **Individual Service Management**
+```bash
+# Start Eureka server first
+make eureka-up
+
+# Start API Gateway
+make gateway-up
+
+# Start Demo service
+make ms-service-up
+
+# Start Main API
+make api-up
+
+# Check health of all services
+make health-all
+```
+
 ### **Containerized Development**
 
 1. **Start the complete stack**
@@ -117,7 +178,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 - **Redis Admin**: http://localhost:8082 (Redis Commander)
 - **Elasticsearch**: http://localhost:9100 (ES Head)
 
-## Project Structure
+## 5 - Project Structure
 
 ```
 bilibili/
@@ -159,7 +220,7 @@ bilibili/
 └── README.md                    # This file
 ```
 
-## Core Features
+## 6 - Core Features
 
 ### **User Management**
 - User registration and authentication
@@ -191,7 +252,7 @@ bilibili/
 - Apache Mahout implementation
 - Fallback to popular content
 
-## Development Commands
+## 7 - Development Commands
 
 ```bash
 # Build the application
@@ -219,7 +280,7 @@ make db-shell
 make redis-cli
 ```
 
-## Deployment
+## 8 - Deployment
 
 ### **Production Deployment**
 ```bash
@@ -236,14 +297,14 @@ The project includes automated CI/CD with GitHub Actions:
 - **Building**: Docker image creation and publishing
 - **Deployment**: Automated deployment to staging
 
-## Monitoring & Health Checks
+## 9 - Monitoring & Health Checks
 
 - **Application Health**: `/actuator/health`
 - **Metrics**: `/actuator/metrics`
 - **Prometheus**: `/actuator/prometheus`
 - **Service Health**: Built-in Docker health checks
 
-## Security Features
+## 10 - Security Features
 
 - **Authentication**: JWT tokens with refresh mechanism
 - **Authorization**: Role-based access control with AOP
@@ -252,7 +313,7 @@ The project includes automated CI/CD with GitHub Actions:
 - **Input Validation**: Comprehensive input validation
 - **Security Headers**: XSS, CSRF, and other security headers
 
-## Contributing
+## 11 - Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -260,7 +321,7 @@ The project includes automated CI/CD with GitHub Actions:
 4. Add tests
 5. Submit a pull request
 
-## Acknowledgments
+## 12 - Acknowledgments
 
 - Inspired by Bilibili's video streaming platform
 - Built with Spring Boot and modern Java ecosystem
