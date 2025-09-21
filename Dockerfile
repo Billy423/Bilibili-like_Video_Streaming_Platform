@@ -1,5 +1,5 @@
 # Multi-stage build for Bilibili API
-FROM maven:3.8.6-openjdk-8-slim AS build
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 
 # Set working directory
 WORKDIR /app
@@ -20,7 +20,7 @@ COPY . .
 RUN mvn clean package -DskipTests
 
 # Runtime stage
-FROM openjdk:8-jre-alpine
+FROM eclipse-temurin:17-jre-alpine
 
 # Install necessary packages
 RUN apk add --no-cache curl
