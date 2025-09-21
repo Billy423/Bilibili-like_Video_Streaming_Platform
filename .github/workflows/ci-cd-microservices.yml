@@ -1,4 +1,4 @@
-name: Multi-Service CI/CD Pipeline
+name: Main API Service CI/CD Pipeline
 
 # Required permissions for GitHub Actions
 permissions:
@@ -16,12 +16,9 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  # Test Stage - Test all services
+  # Test Stage - Test main API service
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [bilibili-api, bilibili-ms, bilibili-gateway, bilibili-eureka]
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -40,13 +37,7 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
 
     - name: Run tests
-      run: |
-        if [ "${{ matrix.service }}" = "bilibili-api" ]; then
-          mvn clean test -Dspring.profiles.active=ci
-        else
-          cd ../${{ matrix.service }}
-          mvn clean test -Dspring.profiles.active=ci
-        fi
+      run: mvn clean test -Dspring.profiles.active=ci
       env:
         SPRING_PROFILES_ACTIVE: ci
 
@@ -54,19 +45,16 @@ jobs:
       uses: dorny/test-reporter@v1
       if: always()
       with:
-        name: Maven Tests - ${{ matrix.service }}
-        path: ${{ matrix.service == 'bilibili-api' && '**/target/surefire-reports/*.xml' || format('../{0}/**/target/surefire-reports/*.xml', matrix.service) }}
+        name: Maven Tests - Main API
+        path: '**/target/surefire-reports/*.xml'
         reporter: java-junit
         fail-on-error: false
 
-  # Build Stage - Build all services
+  # Build Stage - Build main API service
   build:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
-    strategy:
-      matrix:
-        service: [bilibili-api, bilibili-ms, bilibili-gateway, bilibili-eureka]
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
@@ -85,13 +73,7 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
 
     - name: Build application
-      run: |
-        if [ "${{ matrix.service }}" = "bilibili-api" ]; then
-          mvn clean package -DskipTests
-        else
-          cd ../${{ matrix.service }}
-          mvn clean package -DskipTests
-        fi
+      run: mvn clean package -DskipTests
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
@@ -107,7 +89,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.service }}
+        images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/bilibili-api
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -117,7 +99,7 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v4
       with:
-        context: ${{ matrix.service == 'bilibili-api' && '.' || format('../{0}', matrix.service) }}
+        context: .
         push: true
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
@@ -136,28 +118,19 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    - name: Start microservices stack
+    - name: Start main API service with dependencies
       run: |
-        docker compose -f docker-compose.microservices.yml up -d
+        docker compose up -d
         sleep 60  # Wait for services to start
 
     - name: Run integration tests
       run: |
-        # Test Eureka server
-        curl -f http://localhost:15006/actuator/health || exit 1
-        
-        # Test Gateway
-        curl -f http://localhost:15008/actuator/health || exit 1
-        
-        # Test Demo service
-        curl -f http://localhost:15007/actuator/health || exit 1
-        
         # Test Main API
         curl -f http://localhost:8080/actuator/health || exit 1
 
-    - name: Stop microservices stack
+    - name: Stop services
       if: always()
-      run: docker compose -f docker-compose.microservices.yml down
+      run: docker compose down
 
   # Deploy Stage
   deploy:
@@ -168,8 +141,5 @@ jobs:
     - name: Deploy to production
       run: |
         echo "Deployment would happen here"
-        echo "Services deployed:"
+        echo "Main API Service deployed:"
         echo "- bilibili-api: ${{ env.REGISTRY }}/${{ github.repository_owner }}/bilibili-api:latest"
-        echo "- bilibili-ms: ${{ env.REGISTRY }}/${{ github.repository_owner }}/bilibili-ms:latest"
-        echo "- bilibili-gateway: ${{ env.REGISTRY }}/${{ github.repository_owner }}/bilibili-gateway:latest"
-        echo "- bilibili-eureka: ${{ env.REGISTRY }}/${{ github.repository_owner }}/bilibili-eureka:latest"
