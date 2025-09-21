@@ -73,3 +73,53 @@ clean-docker:
 	docker-compose down -v
 	docker system prune -a -f
 	docker volume prune -f
+
+# Microservices commands
+.PHONY: ms-up ms-down ms-logs ms-build ms-restart
+
+ms-up:
+	docker compose -f docker-compose.microservices.yml up -d
+
+ms-down:
+	docker compose -f docker-compose.microservices.yml down
+
+ms-logs:
+	docker compose -f docker-compose.microservices.yml logs -f
+
+ms-build:
+	docker compose -f docker-compose.microservices.yml build
+
+ms-restart:
+	docker compose -f docker-compose.microservices.yml restart
+
+# Individual microservice management
+.PHONY: eureka-up gateway-up ms-service-up api-up
+
+eureka-up:
+	docker compose -f docker-compose.microservices.yml up -d bilibili-eureka
+
+gateway-up:
+	docker compose -f docker-compose.microservices.yml up -d bilibili-gateway
+
+ms-service-up:
+	docker compose -f docker-compose.microservices.yml up -d bilibili-ms
+
+api-up:
+	docker compose -f docker-compose.microservices.yml up -d bilibili-api
+
+# Health checks
+.PHONY: health-ms health-all
+
+health-ms:
+	@echo "Checking microservices health..."
+	@curl -f http://localhost:15006/actuator/health && echo "Eureka: OK" || echo "Eureka: FAIL"
+	@curl -f http://localhost:15008/actuator/health && echo "Gateway: OK" || echo "Gateway: FAIL"
+	@curl -f http://localhost:15007/actuator/health && echo "MS Service: OK" || echo "MS Service: FAIL"
+	@curl -f http://localhost:8080/actuator/health && echo "Main API: OK" || echo "Main API: FAIL"
+
+health-all:
+	@echo "Checking all services health..."
+	@make health-ms
+	@curl -f http://localhost:3306 && echo "MySQL: OK" || echo "MySQL: FAIL"
+	@curl -f http://localhost:6379 && echo "Redis: OK" || echo "Redis: FAIL"
+	@curl -f http://localhost:9200/_cluster/health && echo "Elasticsearch: OK" || echo "Elasticsearch: FAIL"

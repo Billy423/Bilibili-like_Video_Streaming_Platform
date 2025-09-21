@@ -252,18 +252,6 @@ The project includes automated CI/CD with GitHub Actions:
 - **Input Validation**: Comprehensive input validation
 - **Security Headers**: XSS, CSRF, and other security headers
 
-## Interview Highlights
-
-This project demonstrates:
-- **Full-stack development** with modern Java technologies
-- **Microservices architecture** with Spring Cloud
-- **DevOps practices** with Docker and CI/CD
-- **Real-time features** with WebSocket
-- **Search capabilities** with Elasticsearch
-- **Recommendation algorithms** with machine learning
-- **Security best practices** with JWT and encryption
-- **Scalable architecture** with containerization
-
 ## Contributing
 
 1. Fork the repository

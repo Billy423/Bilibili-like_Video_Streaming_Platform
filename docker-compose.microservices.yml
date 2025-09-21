@@ -1,0 +1,276 @@
+# Multi-Service Docker Compose for Bilibili Microservices Architecture
+version: '3.8'
+
+services:
+  # Service Registry - Eureka Server
+  bilibili-eureka:
+    build:
+      context: ../bilibili-eureka
+      dockerfile: Dockerfile
+    container_name: bilibili-eureka
+    ports:
+      - "15006:15006"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:15006/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # API Gateway
+  bilibili-gateway:
+    build:
+      context: ../bilibili-gateway
+      dockerfile: Dockerfile
+    container_name: bilibili-gateway
+    ports:
+      - "15008:15008"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://bilibili-eureka:15006/eureka/
+    depends_on:
+      bilibili-eureka:
+        condition: service_healthy
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:15008/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Demo Microservice
+  bilibili-ms:
+    build:
+      context: ../bilibili-ms
+      dockerfile: Dockerfile
+    container_name: bilibili-ms
+    ports:
+      - "15007:15007"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://bilibili-eureka:15006/eureka/
+    depends_on:
+      bilibili-eureka:
+        condition: service_healthy
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:15007/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Main API Service
+  bilibili-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bilibili-api
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://bilibili-eureka:15006/eureka/
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+      - ELASTICSEARCH_HOST=elasticsearch
+    depends_on:
+      bilibili-eureka:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      rocketmq-broker:
+        condition: service_started
+      fastdfs-storage:
+        condition: service_started
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Database
+  mysql:
+    image: mysql:8.0.31
+    container_name: bilibili-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 114514
+      MYSQL_DATABASE: bilibili
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p114514"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: bilibili-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Elasticsearch
+  elasticsearch:
+    image: elasticsearch:8.6.2
+    container_name: bilibili-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # RocketMQ
+  rocketmq-nameserver:
+    image: apache/rocketmq:4.9.1
+    container_name: bilibili-rocketmq-nameserver
+    command: sh mqnamesrv
+    ports:
+      - "9876:9876"
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+
+  rocketmq-broker:
+    image: apache/rocketmq:4.9.1
+    container_name: bilibili-rocketmq-broker
+    environment:
+      - NAMESRV_ADDR=rocketmq-nameserver:9876
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+    volumes:
+      - ./docker/rocketmq/broker.conf:/opt/rocketmq-4.9.1/conf/broker.conf
+    depends_on:
+      - rocketmq-nameserver
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+
+  # FastDFS
+  fastdfs-storage:
+    image: season/fastdfs:1.2
+    container_name: bilibili-fastdfs
+    ports:
+      - "8888:8888"
+      - "23000:23000"
+    volumes:
+      - fastdfs_data:/var/fdfs
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: bilibili-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - bilibili-gateway
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+
+  # Admin Tools
+  adminer:
+    image: adminer:4.8.1
+    container_name: bilibili-adminer
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    depends_on:
+      - mysql
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: bilibili-redis-commander
+    ports:
+      - "8082:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+
+  elasticsearch-head:
+    image: mobz/elasticsearch-head:5
+    container_name: bilibili-elasticsearch-head
+    ports:
+      - "9100:9100"
+    environment:
+      - http.cors.enabled=true
+      - http.cors.allow-origin=*
+    depends_on:
+      - elasticsearch
+    networks:
+      - bilibili-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
+  elasticsearch_data:
+  fastdfs_data:
+
+networks:
+  bilibili-network:
+    driver: bridge

@@ -1,0 +1,175 @@
+name: Multi-Service CI/CD Pipeline
+
+# Required permissions for GitHub Actions
+permissions:
+  contents: read
+  packages: write
+  checks: write
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # Test Stage - Test all services
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [bilibili-api, bilibili-ms, bilibili-gateway, bilibili-eureka]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Run tests
+      run: |
+        if [ "${{ matrix.service }}" = "bilibili-api" ]; then
+          mvn clean test -Dspring.profiles.active=ci
+        else
+          cd ../${{ matrix.service }}
+          mvn clean test -Dspring.profiles.active=ci
+        fi
+      env:
+        SPRING_PROFILES_ACTIVE: ci
+
+    - name: Generate test report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Maven Tests - ${{ matrix.service }}
+        path: ${{ matrix.service == 'bilibili-api' && '**/target/surefire-reports/*.xml' || format('../{0}/**/target/surefire-reports/*.xml', matrix.service) }}
+        reporter: java-junit
+        fail-on-error: false
+
+  # Build Stage - Build all services
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    strategy:
+      matrix:
+        service: [bilibili-api, bilibili-ms, bilibili-gateway, bilibili-eureka]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Build application
+      run: |
+        if [ "${{ matrix.service }}" = "bilibili-api" ]; then
+          mvn clean package -DskipTests
+        else
+          cd ../${{ matrix.service }}
+          mvn clean package -DskipTests
+        fi
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.service }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: ${{ matrix.service == 'bilibili-api' && '.' || format('../{0}', matrix.service) }}
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Integration Test Stage
+  integration-test:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Start microservices stack
+      run: |
+        docker compose -f docker-compose.microservices.yml up -d
+        sleep 60  # Wait for services to start
+
+    - name: Run integration tests
+      run: |
+        # Test Eureka server
+        curl -f http://localhost:15006/actuator/health || exit 1
+        
+        # Test Gateway
+        curl -f http://localhost:15008/actuator/health || exit 1
+        
+        # Test Demo service
+        curl -f http://localhost:15007/actuator/health || exit 1
+        
+        # Test Main API
+        curl -f http://localhost:8080/actuator/health || exit 1
+
+    - name: Stop microservices stack
+      if: always()
+      run: docker compose -f docker-compose.microservices.yml down
+
+  # Deploy Stage
+  deploy:
+    needs: [build, integration-test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    steps:
+    - name: Deploy to production
+      run: |
+        echo "Deployment would happen here"
+        echo "Services deployed:"
+        echo "- bilibili-api: ${{ env.REGISTRY }}/${{ github.repository_owner }}/bilibili-api:latest"
+        echo "- bilibili-ms: ${{ env.REGISTRY }}/${{ github.repository_owner }}/bilibili-ms:latest"
+        echo "- bilibili-gateway: ${{ env.REGISTRY }}/${{ github.repository_owner }}/bilibili-gateway:latest"
+        echo "- bilibili-eureka: ${{ env.REGISTRY }}/${{ github.repository_owner }}/bilibili-eureka:latest"
