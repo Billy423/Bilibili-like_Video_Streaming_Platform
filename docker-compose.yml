@@ -126,7 +126,7 @@ services:
     depends_on:
       - fastdfs-tracker
 
-  # Eureka Server (Optional - can be removed if not using microservices)
+  # Eureka Server (Optional, can be removed if not using microservices)
   eureka:
     image: openjdk:8-jre-alpine
     container_name: bilibili-eureka
@@ -135,14 +135,6 @@ services:
       - "15006:15006"
     networks:
       - bilibili-network
-    # Note: Eureka server jar needs to be built separately
-    # For now, we'll comment this out to avoid startup issues
-    # command: java -jar /app/eureka-server.jar
-    # healthcheck:
-    #   test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:15006/actuator/health"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
 
   # Bilibili API Application
   bilibili-api:
@@ -185,7 +177,7 @@ services:
       retries: 3
       start_period: 60s
 
-  # Nginx (Optional - for load balancing and static files)
+  # Nginx (Optional, for load balancing and static files)
   nginx:
     image: nginx:alpine
     container_name: bilibili-nginx

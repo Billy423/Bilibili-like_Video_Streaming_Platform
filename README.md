@@ -38,7 +38,7 @@ This project follows a **layered architecture** with clear separation of concern
 ## Quick Start
 
 ### **Prerequisites**
-- Java 8+
+- Java 17+
 - Maven 3.6+
 - Docker & Docker Compose
 - MySQL 8.0
