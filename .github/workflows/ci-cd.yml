@@ -46,24 +46,25 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
     
+    - name: Wait for services to be ready
+      run: |
+        echo "Waiting for MySQL to be ready..."
+        timeout 60 bash -c 'until mysqladmin ping -h localhost -u root -p114514 --silent; do sleep 2; done'
+        echo "Waiting for Redis to be ready..."
+        timeout 60 bash -c 'until redis-cli ping; do sleep 2; done'
+        echo "Services are ready!"
+    
     - name: Run tests
-      run: mvn clean test
+      run: mvn clean test -Dspring.profiles.active=ci
       env:
-        SPRING_PROFILES_ACTIVE: test
-        SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/demo
-        SPRING_DATASOURCE_USERNAME: root
-        SPRING_DATASOURCE_PASSWORD: 114514
-        SPRING_DATA_REDIS_HOST: localhost
-        ELASTICSEARCH_URL: http://localhost:9200
-        ROCKETMQ_NAME_SERVER_ADDRESS: localhost:9876
-      continue-on-error: true
+        SPRING_PROFILES_ACTIVE: ci
     
     - name: Generate test report
       uses: dorny/test-reporter@v1
-      if: success() || failure()
+      if: always()
       with:
         name: Maven Tests
-        path: target/surefire-reports/*.xml
+        path: '**/target/surefire-reports/*.xml'
         reporter: java-junit
 
   build:
