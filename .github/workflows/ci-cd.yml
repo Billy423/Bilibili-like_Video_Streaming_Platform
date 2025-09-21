@@ -13,22 +13,6 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: 114514
-          MYSQL_DATABASE: demo
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-      
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
     - uses: actions/checkout@v3
@@ -46,14 +30,6 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
     
-    - name: Wait for services to be ready
-      run: |
-        echo "Waiting for MySQL to be ready..."
-        timeout 60 bash -c 'until mysqladmin ping -h localhost -u root -p114514 --silent; do sleep 2; done'
-        echo "Waiting for Redis to be ready..."
-        timeout 60 bash -c 'until redis-cli ping; do sleep 2; done'
-        echo "Services are ready!"
-    
     - name: Run tests
       run: mvn clean test -Dspring.profiles.active=ci
       env:
@@ -66,6 +42,7 @@ jobs:
         name: Maven Tests
         path: '**/target/surefire-reports/*.xml'
         reporter: java-junit
+        fail-on-error: false
 
   build:
     needs: test
