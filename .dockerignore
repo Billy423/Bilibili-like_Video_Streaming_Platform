@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Maven
+target/
+!bilibili-api/target/*.jar
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# CI/CD
+.github/
+
+# Node modules (if any)
+node_modules/
+
+# Test files
+src/test/
+
+# Local environment files
+.env
+.env.local

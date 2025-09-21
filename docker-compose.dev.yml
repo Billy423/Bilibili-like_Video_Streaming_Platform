@@ -1,0 +1,61 @@
+version: '3.8'
+
+# Development override for docker-compose.yml
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Override for development
+  bilibili-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      # Mount source code for hot reload
+      - ./bilibili-api/src:/app/src
+      - ./bilibili-service/src:/app/bilibili-service/src
+      - ./bilibili-dao/src:/app/bilibili-dao/src
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DEVTOOLS_RESTART_ENABLED=true
+      - SPRING_DEVTOOLS_LIVERELOAD_ENABLED=true
+    ports:
+      - "8080:8080"
+      - "35729:35729"  # LiveReload port
+
+  # Add development tools
+  adminer:
+    image: adminer:4.8.1
+    container_name: bilibili-adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    networks:
+      - bilibili-network
+    depends_on:
+      - mysql
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: bilibili-redis-commander
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    networks:
+      - bilibili-network
+    depends_on:
+      - redis
+
+  # Elasticsearch Head for ES management
+  elasticsearch-head:
+    image: mobz/elasticsearch-head:5
+    container_name: bilibili-elasticsearch-head
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    networks:
+      - bilibili-network
+    depends_on:
+      - elasticsearch
