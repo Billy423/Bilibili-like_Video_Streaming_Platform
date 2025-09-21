@@ -1,0 +1,217 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: bilibili-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 114514
+      MYSQL_DATABASE: demo
+      MYSQL_USER: bilibili
+      MYSQL_PASSWORD: bilibili123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - bilibili-network
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p114514"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: bilibili-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - bilibili-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Elasticsearch
+  elasticsearch:
+    image: elasticsearch:8.6.2
+    container_name: bilibili-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - bilibili-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # RocketMQ Name Server
+  rocketmq-nameserver:
+    image: apache/rocketmq:4.9.1
+    container_name: bilibili-rocketmq-nameserver
+    restart: unless-stopped
+    ports:
+      - "9876:9876"
+    volumes:
+      - rocketmq_nameserver_data:/opt/logs
+    networks:
+      - bilibili-network
+    command: sh mqnamesrv
+
+  # RocketMQ Broker
+  rocketmq-broker:
+    image: apache/rocketmq:4.9.1
+    container_name: bilibili-rocketmq-broker
+    restart: unless-stopped
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+    volumes:
+      - rocketmq_broker_data:/opt/logs
+      - ./docker/rocketmq/broker.conf:/opt/rocketmq-4.9.1/conf/broker.conf
+    networks:
+      - bilibili-network
+    command: sh mqbroker -c /opt/rocketmq-4.9.1/conf/broker.conf
+    depends_on:
+      - rocketmq-nameserver
+
+  # FastDFS Tracker
+  fastdfs-tracker:
+    image: season/fastdfs:1.2
+    container_name: bilibili-fastdfs-tracker
+    restart: unless-stopped
+    ports:
+      - "22122:22122"
+    volumes:
+      - fastdfs_tracker_data:/var/fdfs
+    networks:
+      - bilibili-network
+    command: tracker
+
+  # FastDFS Storage
+  fastdfs-storage:
+    image: season/fastdfs:1.2
+    container_name: bilibili-fastdfs-storage
+    restart: unless-stopped
+    ports:
+      - "23000:23000"
+      - "8888:8888"
+    volumes:
+      - fastdfs_storage_data:/var/fdfs
+    networks:
+      - bilibili-network
+    command: storage
+    depends_on:
+      - fastdfs-tracker
+
+  # Eureka Server (Optional - can be removed if not using microservices)
+  eureka:
+    image: openjdk:8-jre-alpine
+    container_name: bilibili-eureka
+    restart: unless-stopped
+    ports:
+      - "15006:15006"
+    networks:
+      - bilibili-network
+    # Note: Eureka server jar needs to be built separately
+    # For now, we'll comment this out to avoid startup issues
+    # command: java -jar /app/eureka-server.jar
+    # healthcheck:
+    #   test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:15006/actuator/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+
+  # Bilibili API Application
+  bilibili-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bilibili-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/demo
+      - SPRING_DATASOURCE_USERNAME=bilibili
+      - SPRING_DATASOURCE_PASSWORD=bilibili123
+      - SPRING_DATA_REDIS_HOST=redis
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ROCKETMQ_NAME_SERVER_ADDRESS=rocketmq-nameserver:9876
+      - FDFS_TRACKER_LIST=fastdfs-tracker:22122
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka:15006/eureka/
+    networks:
+      - bilibili-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      rocketmq-broker:
+        condition: service_started
+      fastdfs-storage:
+        condition: service_started
+      # eureka:
+      #   condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx (Optional - for load balancing and static files)
+  nginx:
+    image: nginx:alpine
+    container_name: bilibili-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - nginx_logs:/var/log/nginx
+    networks:
+      - bilibili-network
+    depends_on:
+      - bilibili-api
+
+volumes:
+  mysql_data:
+  redis_data:
+  elasticsearch_data:
+  rocketmq_nameserver_data:
+  rocketmq_broker_data:
+  fastdfs_tracker_data:
+  fastdfs_storage_data:
+  nginx_logs:
+
+networks:
+  bilibili-network:
+    driver: bridge
