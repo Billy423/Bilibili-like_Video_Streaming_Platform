@@ -66,7 +66,7 @@ public class VideoService {
 
     private static final int FRAME_NO = 256;
 
-    @Value("${fdfs.http.storage-addr")
+    @Value("${fdfs.http.storage-addr}")
     private String fastdfsUrl;
 
     @Transactional
