@@ -8,7 +8,7 @@ This project implements a **full-stack microservices architecture** with the fol
 
 ![Architecture](./images/architecture.png)
 
-### ** Project Structure**
+### Project Structure
 ```
 bilibili-ecosystem/
 ├── bilibili/                   # Main API Service (This Repository)

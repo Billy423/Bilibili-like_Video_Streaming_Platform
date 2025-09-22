@@ -137,8 +137,8 @@ jobs:
             echo "Backend service is ready!"
             exit 0
           fi
-          echo "Attempt $i/60: Backend not ready yet, waiting 5 seconds..."
-          sleep 5
+          echo "Attempt $i/60: Backend not ready yet, waiting 2 seconds..."
+          sleep 2
         done
         echo "Backend service failed to start within 5 minutes"
         echo "Checking service logs for debugging..."
