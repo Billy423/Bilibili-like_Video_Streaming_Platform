@@ -10,6 +10,8 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.example.bilibili.domain.constant.SearchConstant;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -19,15 +21,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@ConditionalOnProperty(name = "elasticsearch.enabled", havingValue = "true", matchIfMissing = true)
 public class ElasticSearchService {
 
     @Autowired
+    @Lazy
     private VideoRepository videoRepository;
 
     @Autowired
+    @Lazy
     private UserInfoRepository userInfoRepository;
 
     @Autowired
+    @Lazy
     private ElasticsearchClient elasticsearchClient;
 
     public void addUserInfo(UserInfo userInfo) {

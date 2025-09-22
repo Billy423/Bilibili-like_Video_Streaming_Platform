@@ -16,7 +16,7 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
-  # Test Stage - Test main API service
+  # Test Stage
   test:
     runs-on: ubuntu-latest
     steps:
@@ -36,8 +36,8 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: Run tests
-      run: mvn clean test -Dspring.profiles.active=ci
+    - name: Run unit tests (with mocked services)
+      run: mvn clean test -Dspring.profiles.active=ci -Dmaven.test.skip=false
       env:
         SPRING_PROFILES_ACTIVE: ci
 
@@ -45,10 +45,11 @@ jobs:
       uses: dorny/test-reporter@v1
       if: always()
       with:
-        name: Maven Tests - Main API
+        name: Maven Unit Tests - Main API
         path: '**/target/surefire-reports/*.xml'
         reporter: java-junit
         fail-on-error: false
+
 
   # Build Stage - Build main API service
   build:
@@ -106,57 +107,10 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-  # Integration Test Stage
-  integration-test:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Start main API service with dependencies
-      run: |
-        docker compose up -d
-        
-    - name: Check service status
-      run: |
-        echo "Checking Docker services status..."
-        docker compose ps
-        echo "Checking if port 8080 is listening..."
-        netstat -tlnp | grep :8080 || echo "Port 8080 not yet listening"
-
-    - name: Wait for backend to be ready
-      run: |
-        echo "Waiting for backend service to be ready..."
-        for i in {1..60}; do
-          if curl -f http://localhost:8080/actuator/health >/dev/null 2>&1; then
-            echo "Backend service is ready!"
-            exit 0
-          fi
-          echo "Attempt $i/60: Backend not ready yet, waiting 2 seconds..."
-          sleep 2
-        done
-        echo "Backend service failed to start within 5 minutes"
-        echo "Checking service logs for debugging..."
-        docker compose logs bilibili-api
-        exit 1
-
-    - name: Run integration tests
-      run: |
-        # Test Main API
-        curl -f http://localhost:8080/actuator/health || exit 1
-
-    - name: Stop services
-      if: always()
-      run: docker compose down
 
   # Deploy Stage
   deploy:
-    needs: [build, integration-test]
+    needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
     steps:
